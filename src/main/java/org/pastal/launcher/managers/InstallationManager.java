@@ -73,19 +73,24 @@ public class InstallationManager extends ValueManager<Installation> {
         return getInstallation(name) != null;
     }
 
-    public void createInstallation(final String versionId, final String versionName, final Consumer<ProgressData> progressCallback) throws IOException {
+    public void checkInstallation(final String versionId, final String versionName){
         if (isInstalled(versionName)) {
             throw new IllegalStateException("Version already exists: " + versionName);
         }
+        try {
+            Launcher.getInstance().getVersionManager().getVersions().stream()
+                    .filter(v -> v.getId().equals(versionId))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException("Version not found: " + versionId));
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
+    }
 
-        Launcher.getInstance().getVersionManager().fetch(Launcher.getInstance());
+    public void createInstallation(final String versionId, final String versionName, final Consumer<ProgressData> progressCallback) throws IOException {
+        checkInstallation(versionId,versionName);
 
         Logger.info("Installing {} ({})...", versionName, versionId);
-
-        final Version version = Launcher.getInstance().getVersionManager().getValues().stream()
-                .filter(v -> v.getId().equals(versionId))
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Version not found: " + versionId));
 
         final File versionDir = new File(versionsDirectory, versionName);
         if (!versionDir.exists() && !versionDir.mkdirs()) {
@@ -93,6 +98,11 @@ public class InstallationManager extends ValueManager<Installation> {
         }
 
         final RequestComponent requestComponent = Launcher.getInstance().getComponentManager().get(RequestComponent.class);
+
+        final Version version = Launcher.getInstance().getVersionManager().getValues().stream()
+                .filter(v -> v.getId().equals(versionId))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Version not found: " + versionId));
 
         final JsonObject versionJson = requestComponent.getAsJsonObject(
                 Launcher.getInstance().getMirrorManager().getCurrentMirror().getMirrorUrl(version.getUrl()),

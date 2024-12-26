@@ -10,10 +10,7 @@ import org.pastal.launcher.components.network.RequestComponent;
 import org.tinylog.Logger;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Getter
 public class VersionManager extends ValueManager<Version> {
@@ -49,7 +46,7 @@ public class VersionManager extends ValueManager<Version> {
 
     private Map<String, Version> parseVersions(final JsonArray versions) {
         Logger.info("Parsing versions from manifest.");
-        final Map<String, Version> versionMap = new HashMap<>();
+        final Map<String, Version> versionMap = new LinkedHashMap<>();
 
         versions.forEach(element -> {
             final JsonObject versionObject = element.getAsJsonObject();

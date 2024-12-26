@@ -10,6 +10,7 @@ import org.pastal.launcher.event.events.RequestEvent;
 import org.pastal.launcher.http.implement.Auth;
 import org.pastal.launcher.http.implement.api.Join;
 import org.pastal.launcher.http.implement.api.v1.AccountController;
+import org.pastal.launcher.http.implement.api.v1.InstallationController;
 import org.pastal.launcher.http.implement.api.v1.StatusController;
 import org.pastal.launcher.http.implement.api.v1.accounts.CreateController;
 import org.tinylog.Logger;
@@ -26,7 +27,8 @@ public class RouterManager {
 
         registerRoutes(Auth.class, Join.class);
 
-        registerRoutes(AccountController.class, StatusController.class, CreateController.class);
+        registerRoutes(AccountController.class, StatusController.class, CreateController.class,
+                InstallationController.class);
     }
 
     public void registerRoutes(Class<?>... classes) {
