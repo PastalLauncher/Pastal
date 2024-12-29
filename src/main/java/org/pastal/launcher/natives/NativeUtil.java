@@ -42,7 +42,4 @@ public final class NativeUtil {
     public static native String getHardwareIdentify();
 
     public static native String readRegistryValue(String path, String name);
-
-    public static native long getPidFromHandle(long handle);
-
 }
