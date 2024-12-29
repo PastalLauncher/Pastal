@@ -26,7 +26,6 @@ public class Launcher {
     private final JavaManager javaManager;
     private final AccountManager accountManager;
     private final AddonManager addonManager;
-    private final ConfigManager configManager;
     private final ModManager modManager;
     private final ModProfileManager modProfileManager;
     private final MigratManager migratManager;
@@ -44,7 +43,6 @@ public class Launcher {
         this.runningDirectory = runningDirectory;
         this.exceptionHandler = exceptionHandler;
         this.eventManager = new EventManager();
-        this.configManager = new ConfigManager(this);
         this.componentManager = new ComponentManager();
         this.mirrorManager = new MirrorManager();
         this.versionManager = new VersionManager();

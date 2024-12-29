@@ -7,6 +7,8 @@ import org.pastal.launcher.api.interfaces.PremiumAccount;
 import org.pastal.launcher.api.objects.download.DownloadTask;
 import org.pastal.launcher.api.objects.download.ProgressData;
 import org.pastal.launcher.components.network.DownloadEngine;
+import org.pastal.launcher.config.LaunchSettings;
+import org.pastal.launcher.option.OptionSet;
 import org.pastal.launcher.util.IOUtils;
 import org.pastal.launcher.util.JsonUtils;
 import org.tinylog.Logger;
@@ -26,7 +28,7 @@ public class Installation {
     private final String type;
     private final File directory;
     private final int javaVersion;
-    private final LaunchConfig launchConfig;
+    private final LaunchSettings launchConfig;
     private final File configFile;
     private final JsonObject json;
 
@@ -35,7 +37,7 @@ public class Installation {
         this.type = type;
         this.directory = directory;
         this.configFile = new File(directory, "launch_config.json");
-        this.launchConfig = new LaunchConfig();
+        this.launchConfig = new LaunchSettings(configFile);
 
         File jsonFile = new File(directory, name + ".json");
         try {
@@ -45,47 +47,17 @@ public class Installation {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        this.launchConfig.setJavaPath(getBestJava().getExecutable());
-
-        loadConfig();
-    }
-
-    private void loadConfig() {
-        if (!configFile.exists()) {
-            saveConfig();
-            return;
-        }
-
-        try (Reader reader = new FileReader(configFile)) {
-            JsonObject json = JsonParser.parseReader(reader).getAsJsonObject();
-            launchConfig.fromJson(json);
-        } catch (IOException e) {
-            Logger.warn("Failed to load launch config for {}", name);
-        }
+        launchConfig.getJavaExcutable().set(getBestJava().getExecutable());
+        launchConfig.load();
     }
 
     public void saveConfig() {
-        try (Writer writer = new FileWriter(configFile)) {
-            writer.write(gson.toJson(launchConfig.toJson()));
-        } catch (IOException e) {
-            Logger.warn("Failed to save launch config for {}", name);
-        }
-    }
-
-    public void updateConfig(LaunchConfig newConfig) {
-        this.launchConfig.setJavaPath(newConfig.getJavaPath());
-        this.launchConfig.setModProfile(newConfig.getModProfile());
-        this.launchConfig.setMinMemory(newConfig.getMinMemory());
-        this.launchConfig.setMaxMemory(newConfig.getMaxMemory());
-        this.launchConfig.setJvmArgs(newConfig.getJvmArgs());
-        this.launchConfig.setWidth(newConfig.getWidth());
-        this.launchConfig.setHeight(newConfig.getHeight());
-        saveConfig();
+        launchConfig.save();
     }
 
     private boolean enableAdvancedTokenProtection(){
-        Optional<Boolean> enabled = Launcher.getInstance().getConfigManager().findValue("enableAdvancedTokenProtection",Boolean.class);
-        return enabled.isPresent() && enabled.get();
+   //     Optional<Boolean> enabled = Launcher.getInstance().getConfigManager().findValue("enableAdvancedTokenProtection",Boolean.class);
+        return false;
     }
 
     public Process launch(final Consumer<String> logListener, final Consumer<String> errorListener, final Consumer<ProgressData> progressCallback) throws IOException {
@@ -95,8 +67,8 @@ public class Installation {
 
         reSyncLibraries(progressCallback);
 
-        if (launchConfig.getModProfile() != null) {
-            Optional<ModProfile> profile = Launcher.getInstance().getModProfileManager().getProfile(launchConfig.getModProfile());
+        if (!launchConfig.getModProfile().isMode("Disabled")) {
+            Optional<ModProfile> profile = Launcher.getInstance().getModProfileManager().getProfile(launchConfig.getModProfile().get());
             if (!profile.isPresent()) {
                 throw new IllegalStateException("Selected mod profile not existed.");
             }
@@ -105,21 +77,13 @@ public class Installation {
 
         final List<String> command = new ArrayList<>();
 
-        if (launchConfig.getJavaPath() != null && !launchConfig.getJavaPath().isEmpty()) {
-            command.add(launchConfig.getJavaPath());
-        } else {
-            final JavaInstallation java = Launcher.getInstance().getJavaManager().getBestJavaFor(javaVersion);
-            if (java == null) {
-                throw new IOException("No Java installation found for version " + javaVersion);
-            }
-            command.add(java.getPath());
-        }
+        command.add(launchConfig.getJavaExcutable().get());
 
         command.add("-Xms" + launchConfig.getMinMemory() + "M");
         command.add("-Xmx" + launchConfig.getMaxMemory() + "M");
 
-        if (!launchConfig.getJvmArgs().isEmpty()) {
-            command.addAll(Arrays.asList(launchConfig.getJvmArgs().split(" ")));
+        if (!launchConfig.getJavaArguments().get().isEmpty()) {
+            command.addAll(Arrays.asList(launchConfig.getJavaArguments().get().split(" ")));
         }
 
         command.add("-XX:+UnlockExperimentalVMOptions");

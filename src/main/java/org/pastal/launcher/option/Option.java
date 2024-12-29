@@ -1,45 +1,48 @@
 package org.pastal.launcher.option;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import lombok.Getter;
 import lombok.Setter;
+import org.pastal.launcher.http.implement.api.Join;
 
 import java.util.function.Supplier;
 
-public class Option<T> {
+public abstract class Option<T> {
 
     @Getter
     private final String name, description;
 
-    @Setter
-    @Getter
-    public T value;
+    private T value;
 
-    @Getter
-    private final int height;
 
     private final Supplier<Boolean> visible;
 
-    public Option(String name, String description, T value, Supplier<Boolean> visible, int height) {
+    public Option(String name, String description, T value, Supplier<Boolean> visible) {
         this.name = name;
         this.description = description;
         this.value = value;
         this.visible = visible;
-        this.height = height;
     }
 
-    public Option(String name, String description, Supplier<Boolean> visible, int height) {
+    public Option(String name, String description, Supplier<Boolean> visible) {
         this.name = name;
         this.description = description;
         this.visible = visible;
-        this.height = height;
     }
 
     public boolean isVisible() {
         return visible.get();
     }
 
-    public String getSimplifyName() {
-        return name.replace(" ", "").replace("(", "").replace(")", "");
+    public T get() {
+        return value;
     }
 
+    public void set(T value) {
+        this.value = value;
+    }
+
+    public abstract JsonElement asJson();
+    public abstract void readJson(JsonElement object);
 }
